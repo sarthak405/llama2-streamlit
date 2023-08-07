@@ -1,5 +1,4 @@
 import streamlit as st
-# import replicate
 import os
 import requests
 
@@ -35,29 +34,13 @@ def check_password():
 
 if check_password():
 
-    # headersList = {
-    #  "Accept": "*/*",
-    #  "User-Agent": "Thunder Client (https://www.thunderclient.com)",
-    #  "Content-Type": "multipart/form-data; boundary=kljmyvW1ndjXaOEAg4vPm6RBUqO6MC5A" 
-    # }
-
     # App title
     st.set_page_config(page_title="🐝🦙💬 IBM Llama 2 Chatbot")
 
     # Replicate Credentials
     with st.sidebar:
         st.title('🐝🦙💬 IBM Llama 2 Chatbot')
-        # if 'REPLICATE_API_TOKEN' in st.secrets:
-        #     st.success('API key already provided!', icon='✅')
-        #     replicate_api = st.secrets['REPLICATE_API_TOKEN']
-        # else:
-        #     replicate_api = st.text_input('Enter Replicate API token:', type='password')
-        #     if not (replicate_api.startswith('r8_') and len(replicate_api)==40):
-        #         st.warning('Please enter your credentials!', icon='⚠️')
-        #     else:
-        #         st.success('Proceed to entering your prompt message!', icon='👉')
-        # st.markdown('📖 Learn how to build this app in this [blog](https://blog.streamlit.io/how-to-build-a-llama-2-chatbot/)!')
-    # os.environ['REPLICATE_API_TOKEN'] = replicate_api
+
 
     # Store LLM generated responses
     if "messages" not in st.session_state.keys():
@@ -78,14 +61,10 @@ if check_password():
         string_dialogue = "You are a helpful assistant. You do not respond as 'User' or pretend to be 'User'. You only respond once as 'Assistant'."
         for dict_message in st.session_state.messages:
             if dict_message["role"] == "user":
-                string_dialogue += "User: " + dict_message["content"] + "\n\n"
+                string_dialogue += "[User:] " + dict_message["content"] + "\n\n"
             else:
-                string_dialogue += "Assistant: " + dict_message["content"] + "\n\n"
-        # output = replicate.run('a16z-infra/llama13b-v2-chat:df7690f1994d94e96ad9d568eac121aecf50684a0b0963b25a41cc40061269e5', 
-        #                        input={"prompt": f"{string_dialogue} {prompt_input} Assistant: ",
-        #                               "temperature":0.1, "top_p":0.9, "max_length":512, "repetition_penalty":1})
-        prompt = f"{string_dialogue} {prompt_input} Assistant: "
-        # payload = f'--kljmyvW1ndjXaOEAg4vPm6RBUqO6MC5A\r\nContent-Disposition: form-data; name=\"prompt\"\r\n\r\n{prompt}\r\n--kljmyvW1ndjXaOEAg4vPm6RBUqO6MC5A--\r\n'
+                string_dialogue += "[Assistant:] " + dict_message["content"] + "\n\n"
+        prompt = f"{string_dialogue} {prompt_input} [Assistant:] "
         headers = {
             'Accept': '*/*',
             'User-Agent': 'Streamlit',
@@ -95,14 +74,10 @@ if check_password():
         }
 
         response = requests.get(reqUrl, headers=headers, files=files)
-        # response = requests.request("GET", reqUrl, data=payload,  headers=headersList)
-        # print(prompt)
-        # output = "Sample Output. To be replaced by API Call"
-        print(response.text)
-        return response.text
+        return response.json()['response'].split("[Assistant:]")[-1]
 
     # User-provided prompt
-    # if prompt := st.chat_input(disabled=not replicate_api):
+
     if prompt := st.chat_input(disabled=False):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -113,17 +88,12 @@ if check_password():
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 response = generate_llama2_response(prompt)
-                if response.startswith('"'):
-                    response = response[1:]
-                if response.endswith('"'):
-                    response = response[:-1]
+
                 placeholder = st.empty()
                 full_response = ''
                 for item in response:
                     full_response += item
-                    # placeholder.write(full_response)
                     placeholder.markdown(full_response)
                 placeholder.markdown(full_response)
-                # placeholder.write(full_response)
         message = {"role": "assistant", "content": full_response}
         st.session_state.messages.append(message)
