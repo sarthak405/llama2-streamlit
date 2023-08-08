@@ -2,7 +2,11 @@ import streamlit as st
 import os
 import requests
 
-reqUrl = st.secrets['reqUrl']
+url_llama2_7b = st.secrets['url_llama2_7b']
+url_llama2_13b = st.secrets['url_llama2_13b']
+url_llama2_70b = st.secrets['url_llama2_70b']
+if 'option' not in st.session_state:
+    st.session_state.option = ''
 
 def check_password():
     """Returns `True` if the user had the correct password."""
@@ -36,10 +40,16 @@ if check_password():
 
     # App title
     st.set_page_config(page_title="🐝🦙💬 IBM Llama 2 Chatbot")
-
-    # Replicate Credentials
+    url_mapping = {"Llama2-7b":url_llama2_7b, "Llama2-13b":url_llama2_13b, "Llama2-70b":url_llama2_70b}
     with st.sidebar:
         st.title('🐝🦙💬 IBM Llama 2 Chatbot')
+        option = st.selectbox(
+            'Model to be run',
+            ('Llama2-7b', 'Llama2-13b', 'Llama2-70b'))
+        if option != st.session_state.option:
+            st.session_state.option = option
+            st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
+            st.session_state.model_url = url_mapping[option]
 
 
     # Store LLM generated responses
@@ -72,7 +82,9 @@ if check_password():
         files = {
             'prompt': (None, f'{prompt}'),
         }
-
+        reqUrl = st.session_state.model_url
+        # response = "Checking Response from {}".format(reqUrl)
+        # return response
         response = requests.get(reqUrl, headers=headers, files=files)
         return response.json()['response'].split("[Assistant:]")[-1]
 
